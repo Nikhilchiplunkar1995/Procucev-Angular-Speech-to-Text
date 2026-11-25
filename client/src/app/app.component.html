@@ -1,0 +1,137 @@
+<div class="app-shell">
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-mark">◉</div>
+            <div><b>vocalnote</b><span>AI TRANSCRIPTION</span></div>
+        </div>
+        <div class="workspace-label">WORKSPACE</div><button class="nav" [class.active]="tab==='all'"
+            (click)="tab='all'">▦ &nbsp; Overview</button><button class="nav" (click)="tab='all'">▤ &nbsp;
+            Transcriptions <span class="count">{{items.length}}</span></button><button class="nav"
+            [class.active]="tab==='recent'" (click)="tab='recent'">◷ &nbsp; Recent</button>
+        <div class="side-bottom">
+            <div class="plan-card">
+                <div class="plan-icon">✦</div><b>Open-source AI</b>
+                <p>Powered by Whisper for multilingual audio transcription.</p><span class="online-dot">Self-hosted
+                    transcription</span>
+            </div>
+            <div class="profile">
+                <div class="avatar">V</div>
+                <div><b>My Workspace</b><span>Personal account</span></div>
+            </div>
+        </div>
+    </aside>
+    <main class="main">
+        <header class="topbar">
+            <div>
+                <div class="crumb">Workspace › <b>Overview</b></div>
+                <h1>Your speech, <em>in text.</em></h1>
+                <p class="subtitle">Capture ideas, transcribe conversations, and keep everything in one place.</p>
+            </div><button class="primary small" (click)="newSession()">＋ New transcription</button>
+        </header>
+        <div class="notice" *ngIf="notice"><span>{{notice}}</span><button (click)="notice=''">✕</button></div>
+        <section class="hero-card">
+            <div class="hero-copy">
+                <div class="eyebrow"><span class="pulse"></span> LIVE TRANSCRIPTION STUDIO</div>
+                <h2>Turn your voice into<br><span>something actionable.</span></h2>
+                <p>Speak naturally in English or Hindi. Save, edit, and revisit your words.</p>
+                <div class="hero-meta"><span>◎ Multilingual</span><span>◉ Live results</span><span>✦ Whisper AI</span>
+                </div>
+            </div>
+            <div class="mic-orb">
+                <div class="orb-ring ring-one"></div>
+                <div class="orb-ring ring-two"></div>
+                <div class="orb-core">🎙</div>
+                <div class="sound-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            </div>
+        </section>
+        <section class="studio-grid">
+            <div class="panel recorder-panel">
+                <div class="panel-head">
+                    <div><span class="section-kicker">RECORDING STUDIO</span>
+                        <h3>Start a new session</h3>
+                    </div><span class="status"
+                        [class.recording]="listening"><i></i>{{listening?'Recording':'Ready'}}</span>
+                </div><label class="field-label" for="language">Transcription language</label>
+                <div class="select-wrap">◎ <select id="language" [(ngModel)]="language" [disabled]="listening">
+                        <option value="en-IN">English (India)</option>
+                        <option value="hi-IN">Hindi (India)</option>
+                        <option value="en-US">English (US)</option>
+                        <option value="en-GB">English (UK)</option>
+                    </select></div>
+                <div class="record-area"><button type="button" class="record-button" [class.is-recording]="listening"
+                        (click)="listening?stopRecording():startRecording()">
+                        <div>{{listening?'■':'🎙'}}</div>
+                    </button><b>{{listening?'Listening to your voice':'Tap to start
+                        speaking'}}</b><span>{{listening?'Tap to finish recording':'Allow microphone access when
+                        prompted'}}</span>
+                    <div class="timer">{{duration(elapsed)}}</div>
+                </div>
+                <div class="record-actions"><button class="primary"
+                        (click)="listening?stopRecording():startRecording()">{{listening?'■ Finish recording':'🎙 Start
+                        recording'}}</button><button class="secondary" (click)="audioInput.click()" [disabled]="busy">⇧
+                        Upload audio</button><input #audioInput type="file" accept="audio/*,video/webm" hidden
+                        (change)="upload($event)"></div>
+                <div class="hint">✦ Live recognition works in supported browsers. Audio uploads use Whisper AI.</div>
+            </div>
+            <div class="panel preview-panel">
+                <div class="panel-head">
+                    <div><span class="section-kicker">LIVE OUTPUT</span>
+                        <h3>Transcription preview</h3>
+                    </div><span class="live-label"><span></span> LIVE</span>
+                </div><input class="title-input" [(ngModel)]="title" placeholder="Give your transcription a title">
+                <div class="transcript-box"><textarea class="transcript-edit" [(ngModel)]="draft"
+                        placeholder="Your words will appear here. You can also type or edit your transcript."></textarea><span
+                        class="interim" *ngIf="interim">{{interim}}</span></div>
+                <div class="preview-footer"><span>{{wordCount}} words</span>
+                    <div style="display:flex;gap:8px"><button class="secondary" (click)="speak()"
+                            [disabled]="!draft.trim()">▶ Listen</button><button class="primary" (click)="save()"
+                            [disabled]="busy||!draft.trim()">✓ Save transcription</button></div>
+                </div>
+            </div>
+        </section>
+        <section class="history-section">
+            <div class="history-head">
+                <div><span class="section-kicker">YOUR LIBRARY</span>
+                    <h3>Transcription history <span class="total">{{items.length}}</span></h3>
+                </div>
+                <div class="history-tools">
+                    <div class="search">⌕ <input placeholder="Search transcriptions..." [(ngModel)]="query"
+                            (ngModelChange)="load()"></div><button class="icon-button" (click)="load()"
+                        aria-label="Refresh">↻</button>
+                </div>
+            </div>
+            <div class="history-list">
+                <div *ngIf="!filtered.length" class="empty-history"><b>No transcriptions yet</b><span>Your saved
+                        sessions will show up here.</span></div>
+                <div class="history-item" *ngFor="let item of filtered">
+                    <div class="file-icon">▤</div>
+                    <div class="history-info"><b>{{item.title}}</b>
+                        <p>{{item.content | slice:0:120}}</p>
+                        <div class="history-meta">
+                            <span>{{date(item.updated_at)}}</span><span>{{item.language}}</span><span>{{duration(item.duration_seconds)}}</span>
+                        </div>
+                    </div>
+                    <div class="history-actions"><button class="icon-button" (click)="editItem(item)"
+                            title="View and edit">✎</button><button class="icon-button danger" (click)="remove(item)"
+                            title="Delete">▤</button></div>
+                </div>
+            </div>
+        </section>
+        <footer>Made for ideas that move faster than typing. <span>VocalNote · Procucev AI Hiring Assignment</span>
+        </footer>
+    </main>
+    <div class="modal-backdrop" *ngIf="showEditor" (click)="showEditor=false">
+        <div class="modal" (click)="$event.stopPropagation()">
+            <div class="modal-head">
+                <div><span class="section-kicker">TRANSCRIPTION EDITOR</span>
+                    <h3>{{active?'Edit transcription':'New transcription'}}</h3>
+                </div><button class="icon-button" (click)="showEditor=false">✕</button>
+            </div><label class="field-label">Title</label><input class="modal-title" [(ngModel)]="title"><label
+                class="field-label">Transcript</label><textarea class="modal-text" [(ngModel)]="draft"
+                rows="11"></textarea>
+            <div class="modal-actions"><button class="secondary" (click)="showEditor=false">Cancel</button><button
+                    class="primary" [disabled]="busy||!draft.trim()" (click)="active?update():save()">✓ {{active?'Save
+                    changes':'Save transcription'}}</button></div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: speech_ai
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports: ["5432:5432"]
+    volumes: ["postgres_data:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d speech_ai"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  api:
+    build: ./server
+    restart: unless-stopped
+    environment:
+      PORT: 4000
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/speech_ai
+      CLIENT_ORIGIN: http://localhost:5173
+    ports: ["4000:4000"]
+    depends_on:
+      db: { condition: service_healthy }
+  transcriber:
+    build: ./transcriber
+    restart: unless-stopped
+    environment:
+      WHISPER_MODEL: small
+      WHISPER_DEVICE: cpu
+      WHISPER_COMPUTE_TYPE: int8
+      CLIENT_ORIGIN: http://localhost:5173
+    ports: ["8000:8000"]
+  client:
+    build: ./client
+    restart: unless-stopped
+    ports: ["5173:80"]
+    depends_on: [api, transcriber]
+volumes:
+  postgres_data:
